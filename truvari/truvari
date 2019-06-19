@@ -78,7 +78,7 @@ def make_interval_tree(vcf_file, sizemin=10, sizemax=100000, passonly=False):
     try:
         for entry in vcf_file:
             n_entries += 1
-            if passonly and (entry.FILTER is None or len(entry.FILTER)):
+            if passonly and (entry.FILTER is not None and len(entry.FILTER) > 0):
                 continue
             start, end = get_vcf_boundaries(entry)
             sz = get_vcf_entry_size(entry)
@@ -193,7 +193,8 @@ def get_vcf_variant_type(entry):
       etc from the ALT column.
     - Otherwise, rely on vcf.model._Record.var_subtype
     """
-    sv_alt_match = re.compile("\<(?P<SVTYPE>.*)\>")
+    # Allow for subtypes in the representation
+    sv_alt_match = re.compile("\<(?P<SVTYPE>[^:>]*).*\>")
 
     ret_type = None
     if "SVTYPE" in entry.INFO:
@@ -201,6 +202,10 @@ def get_vcf_variant_type(entry):
         if type(ret_type) is list:
             logging.warning("SVTYPE is list for entry %s", str(entry))
             ret_type = ret_type[0]
+        colon_pos = ret_type.find(":")
+        if colon_pos != -1:
+            logging.warning("SVTYPE has subtypes for entry %s, using top-level type", str(entry))
+            return ret_type[:colon_pos]
         return ret_type
     if not (str(entry.ALT[0]).count("<" or str(entry.ALT)[0].count(":"))):
         # Doesn't have <INS> or BNDs as the alt seq, then we can assume it's sequence resolved..?
@@ -839,7 +844,7 @@ def run(cmdargs):
         # +- 1 just to be safe because why not...
         for comp_entry in vcf_comp.fetch(base_entry.CHROM, max(0, fetch_start - 1), fetch_end + 1):
 
-            if args.passonly and (comp_entry.FILTER is None or len(comp_entry.FILTER)):
+            if args.passonly and (comp_entry.FILTER is not None and len(comp_entry.FILTER) > 0):
                 if comp_entry.FILTER is None:
                     logging.warning("Comp variant %s has 'None' FILTER and is being excluded from comparison",
                                     comp_entry)
@@ -994,7 +999,7 @@ def run(cmdargs):
     vcf_comp = vcf.Reader(filename=args.comp)
     edit_header(vcf_comp)
     for cnt, entry in enumerate(regions.iterate(vcf_comp)):
-        if args.passonly and (entry.FILTER is None or len(entry.FILTER)):
+        if args.passonly and (entry.FILTER is not None and len(entry.FILTER) > 0):
             continue
         if not args.noprog:
             bar.update(cnt + 1)
