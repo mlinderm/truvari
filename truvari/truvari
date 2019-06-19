@@ -14,6 +14,7 @@ Given a benchmark and callset, calculate the recall/precision/f-measure
 import warnings
 
 from collections import defaultdict, Counter, OrderedDict
+import itertools
 
 # External dependencies
 import vcf
@@ -117,7 +118,16 @@ def gt_comp(entryA, entryB, sampleA, sampleB):
     Compare the genotypes, returns if they're the same
     Simple for now. Methodized so it's easy to expand later
     """
-    return entryA.genotype(sampleA)["GT"] == entryB.genotype(sampleB)["GT"]
+    # TODO: Allow for different heterozygous representations
+    gtA = entryA.genotype(sampleA).gt_type
+    gtB = entryB.genotype(sampleB).gt_type
+    return (gtA == gtB, (gtA, gtB))
+
+def ac_to_str(ac):
+    """
+    Convert pyVCF gt_type to expected string { "0-2" or "." }
+    """
+    return "." if ac is None else str(ac)
 
 
 def create_haplotype(entryA, entryB, ref):
@@ -777,6 +787,8 @@ def run(cmdargs):
     stats_box["gt_precision"] = 0
     stats_box["gt_recall"] = 0
     stats_box["gt_f1"] = 0
+    for call, base in itertools.product([0, 1, 2, "."], repeat=2):
+        stats_box["TP-gt_call-{0}_base-{1}".format(call, base)] = 0
     
     # Calls that have been matched up
     matched_calls = defaultdict(bool)
@@ -859,7 +871,7 @@ def run(cmdargs):
                 logging.debug("%s is hom-ref", str(comp_entry))
                 continue
 
-            if args.gtcomp and not gt_comp(base_entry, comp_entry, sampleA, sampleB):
+            if args.gtcomp and not gt_comp(base_entry, comp_entry, sampleA, sampleB)[0]:
                 logging.debug("%s and %s are not the same genotype", str(base_entry), str(comp_entry))
                 continue
 
@@ -917,7 +929,8 @@ def run(cmdargs):
             b_key = vcf_to_key('b', base_entry)
             if not matched_calls[b_key]:
                 stats_box["TP-base"] += 1
-                if gt_comp(base_entry, match_entry, sampleA, sampleB):
+                match, _ = gt_comp(base_entry, match_entry, sampleA, sampleB)
+                if match:
                     stats_box["TP-base_TP-gt"] += 1
                 else:
                     stats_box["TP-base_FP-gt"] += 1
@@ -937,10 +950,13 @@ def run(cmdargs):
                 c_key = vcf_to_key('c', match_entry)
                 if not matched_calls[c_key]:
                     stats_box["TP-call"] += 1
-                    if gt_comp(base_entry, match_entry, sampleA, sampleB):
+                    match, gts = gt_comp(base_entry, match_entry, sampleA, sampleB)
+                    if match:
                         stats_box["TP-call_TP-gt"] += 1
                     else:
                         stats_box["TP-call_FP-gt"] += 1
+                    # gts in (base_entry, match_entry)
+                    stats_box["TP-gt_call-{1}_base-{0}".format(*map(ac_to_str, gts))] += 1
                     write_tp_call = True
                 else:
                     write_tp_call = False
@@ -1016,7 +1032,24 @@ def run(cmdargs):
             stats_box["gt_precision"] = float(stats_box["TP-call_TP-gt"]) / (stats_box["TP-call_TP-gt"] +
                                                                              stats_box["FP"] + stats_box["TP-call_FP-gt"])
             stats_box["gt_recall"] = float(stats_box["TP-base_TP-gt"]) / (stats_box["TP-base_TP-gt"] + stats_box["FN"])
-    
+        
+        # GT concordance
+        gt_comparisons = 0
+        for call, base in itertools.product([0, 1, 2, "."], [0, 1, 2]):
+            gt_comparisons += stats_box["TP-gt_call-{0}_base-{1}".format(call, base)]
+        
+        stats_box["gt_concordance"] = (
+            stats_box["TP-gt_call-0_base-0"] +
+            stats_box["TP-gt_call-1_base-1"] +
+            stats_box["TP-gt_call-2_base-2"]
+        ) / gt_comparisons
+        stats_box["gt_nonref_concordance"] = (
+            stats_box["TP-gt_call-0_base-0"] +
+            stats_box["TP-gt_call-1_base-1"] + stats_box["TP-gt_call-1_base-2"] +
+            stats_box["TP-gt_call-2_base-2"] + stats_box["TP-gt_call-2_base-1"]
+        ) / gt_comparisons
+
+
     # f-measure
     neum = stats_box["recall"] * stats_box["precision"]
     denom = stats_box["recall"] + stats_box["precision"]
