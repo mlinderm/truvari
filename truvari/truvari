@@ -620,6 +620,10 @@ def edit_header(my_vcf):
         id="MatchId", num=1, type='Integer',
         desc="Truvari uid to help tie tp-base.vcf and tp-call.vcf entries together",
         source=None, version=None)
+    my_vcf.infos['MatchGT'] = vcf.parser._Info(
+        id="MatchGT", num=1, type='String',
+        desc="TRUE if call GT matches base GT",
+        source=None, version=None)
 
 
 def parse_args(args):
@@ -958,8 +962,10 @@ def run(cmdargs):
                     match, gts = gt_comp(base_entry, match_entry, sampleA, sampleB)
                     if match:
                         stats_box["TP-call_TP-gt"] += 1
+                        match_entry.INFO["MatchGT"] = "TRUE"
                     else:
                         stats_box["TP-call_FP-gt"] += 1
+                        match_entry.INFO["MatchGT"] = "FALSE"
                     # gts in (base_entry, match_entry)
                     stats_box["TP-gt_call-{1}_base-{0}".format(*map(ac_to_str, gts))] += 1
                     write_tp_call = True
