@@ -1,3 +1,7 @@
 .vscode
 
 pyve3
+build
+dist
+*__pycache__*
+*.egg-info
