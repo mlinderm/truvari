@@ -46,6 +46,11 @@ def entry_size_similarity(entryA, entryB):
     sizeB = get_vcf_entry_size(entryB)
     return sizesim(sizeA, sizeB)
 
+def gt_to_str(gt):
+    """
+    Convert genotype to expected string { "0-2" or "." }
+    """
+    return tuple(map(lambda allele: "." if allele is None else str(allele), gt))
 
 def entry_gt_comp(entryA, entryB, sampleA, sampleB):
     """
@@ -53,11 +58,11 @@ def entry_gt_comp(entryA, entryB, sampleA, sampleB):
     Simple for now.
     """
     # TODO: Handle hemizygous entries better
-    gtA = entryA.samples[sampleA]["GT"]
-    acA = sum(allele != 0 for allele in gtA)
+    gtA = gt_to_str(entryA.samples[sampleA]["GT"])
+    acA = "." if "." in gtA else sum(allele != "0" for allele in gtA)
     
-    gtB = entryB.samples[sampleB]["GT"]
-    acB = sum(allele != 0 for allele in gtB)
+    gtB = gt_to_str(entryB.samples[sampleB]["GT"])
+    acB = "." if "." in gtB else sum(allele != "0" for allele in gtB)
     return (sorted(gtA) == sorted(gtB), (acA, acB))
 
 def create_pos_haplotype(chrom, a1_start, a1_end, a1_seq, a2_start, a2_end, a2_seq, ref, buf_len=0):
