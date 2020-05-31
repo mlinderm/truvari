@@ -34,7 +34,8 @@ from truvari.comparisons import (
     is_sv,
     filter_value,
     match_sorter,
-    copy_entry
+    copy_entry,
+    gt_to_str
 )
 
 from truvari.genome_tree import *

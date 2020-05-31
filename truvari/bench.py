@@ -478,6 +478,10 @@ def bench_main(cmdargs):
         # No overlaps, don't even bother checking
         if fetch_start is None and fetch_end is None:
             write_fn(base_entry, outputs)
+            # Update GT table with FNs
+            gtBase = truvari.gt_to_str(base_entry.samples[outputs["sampleBase"]]["GT"])
+            acBase = "." if "." in gtBase else sum(allele != "0" for allele in gtBase)
+            outputs["stats_box"]["TP-gt_call-._base-{0}".format(acBase)] += 1
             continue
 
         # IntervalTree can give boundaries past REFDIST in the case of Inversions where start>end
