@@ -324,6 +324,9 @@ def output_base_match(base_entry, num_neighbors, thresh_neighbors, myid, matched
         # False negative
         outputs["stats_box"]["FN"] += 1
         outputs["fn_out"].write(base_entry)
+        gtBase = truvari.gt_to_str(base_entry.samples[outputs["sampleBase"]]["GT"])
+        acBase = "." if "." in gtBase else sum(allele != "0" for allele in gtBase)
+        outputs["stats_box"]["TP-gt_call-._base-{0}".format(acBase)] += 1    
         return
 
     logging.debug("Picking from candidate matches:\n%s", "\n".join([str(x) for x in thresh_neighbors]))
