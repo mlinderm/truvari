@@ -36,6 +36,8 @@ class StatsBox(OrderedDict):
         self["gt_f1"] = 0
         self["gt_concordance"] = 0
         self["gt_nonref_concordance"] = 0
+        self["gt_disc_concordance"] = 0
+        self["gt_disc_nonref_concordance"] = 0
         for call, base in itertools.product([0, 1, 2, "."], repeat=2):
             self["TP-gt_call-{0}_base-{1}".format(call, base)] = 0
 
@@ -83,6 +85,18 @@ class StatsBox(OrderedDict):
                     self["TP-gt_call-1_base-1"] + self["TP-gt_call-1_base-2"] +
                     self["TP-gt_call-2_base-2"] + self["TP-gt_call-2_base-1"]
                 ) / gt_comparisons
+                self["gt_disc_concordance"] = (
+                    self["TP-gt_call-0_base-0"] +
+                    self["TP-gt_call-0_base-."] +
+                    self["TP-gt_call-1_base-1"] +
+                    self["TP-gt_call-2_base-2"]
+                ) / (self["TP-call"] + self["FP"])
+                self["gt_disc_nonref_concordance"] = (
+                    self["TP-gt_call-0_base-0"] +
+                    self["TP-gt_call-0_base-."] +
+                    self["TP-gt_call-1_base-1"] + self["TP-gt_call-1_base-2"] +
+                    self["TP-gt_call-2_base-2"] + self["TP-gt_call-2_base-1"]
+                ) / (self["TP-call"] + self["FP"])
 
         # f-measure
         neum = self["recall"] * self["precision"]
