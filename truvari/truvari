@@ -793,6 +793,8 @@ def run(cmdargs):
     stats_box["TP-call_FP-gt"] = 0
     stats_box["TP-base_TP-gt"] = 0
     stats_box["TP-base_FP-gt"] = 0
+    stats_box["FP-call_FP-gt"] = 0
+    stats_box["FP-call_TN-gt"] = 0
     stats_box["gt_precision"] = 0
     stats_box["gt_recall"] = 0
     stats_box["gt_f1"] = 0

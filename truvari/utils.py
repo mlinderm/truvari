@@ -29,6 +29,8 @@ class StatsBox(OrderedDict):
         self["TP-call_FP-gt"] = 0
         self["TP-base_TP-gt"] = 0
         self["TP-base_FP-gt"] = 0
+        self["FP-call_FP-gt"] = 0
+        self["FP-call_TN-gt"] = 0
         self["gt_precision"] = 0
         self["gt_recall"] = 0
         self["gt_f1"] = 0
@@ -60,7 +62,7 @@ class StatsBox(OrderedDict):
             self["recall"] = float(self["TP-base"]) / (self["TP-base"] + self["FN"])
             if self["TP-call_TP-gt"] != 0:
                 self["gt_precision"] = float(self["TP-call_TP-gt"]) / (self["TP-call_TP-gt"] +
-                                                                       self["FP"] + self["TP-call_FP-gt"])
+                                                                       self["FP-call_FP-gt"] + self["TP-call_FP-gt"])
                 self["gt_recall"] = float(self["TP-base_TP-gt"]) / (self["TP-base_TP-gt"] + self["FN"])
 
             # GT concordance
@@ -71,11 +73,13 @@ class StatsBox(OrderedDict):
             if gt_comparisons > 0:
                 self["gt_concordance"] = (
                     self["TP-gt_call-0_base-0"] +
+                    self["TP-gt_call-0_base-."] +
                     self["TP-gt_call-1_base-1"] +
                     self["TP-gt_call-2_base-2"]
                 ) / gt_comparisons
                 self["gt_nonref_concordance"] = (
                     self["TP-gt_call-0_base-0"] +
+                    self["TP-gt_call-0_base-."] +
                     self["TP-gt_call-1_base-1"] + self["TP-gt_call-1_base-2"] +
                     self["TP-gt_call-2_base-2"] + self["TP-gt_call-2_base-1"]
                 ) / gt_comparisons

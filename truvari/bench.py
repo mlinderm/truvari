@@ -413,6 +413,13 @@ def parse_fps(matched_calls, tot_comp_entries, regions, args, outputs):
         if regions.include(entry):
             outputs["fp_out"].write(truvari.copy_entry(entry, outputs["n_comp_header"]))
             outputs["stats_box"]["FP"] += 1
+            gtCall = truvari.gt_to_str(entry.samples[outputs["sampleBase"]]["GT"])
+            acCall = "." if "." in gtCall else sum(allele != "0" for allele in gtCall)
+            if acCall == 0:
+                outputs["stats_box"]["FP-call_TN-gt"] += 1
+            else:
+                outputs["stats_box"]["FP-call_FP-gt"] += 1           
+            outputs["stats_box"]["TP-gt_call-{0}_base-.".format(acCall)] += 1  
 
     if args.prog:
         pbar.finish()
