@@ -75,13 +75,11 @@ class StatsBox(OrderedDict):
             if gt_comparisons > 0:
                 self["gt_concordance"] = (
                     self["TP-gt_call-0_base-0"] +
-                    self["TP-gt_call-0_base-."] +
                     self["TP-gt_call-1_base-1"] +
                     self["TP-gt_call-2_base-2"]
                 ) / gt_comparisons
                 self["gt_nonref_concordance"] = (
                     self["TP-gt_call-0_base-0"] +
-                    self["TP-gt_call-0_base-."] +
                     self["TP-gt_call-1_base-1"] + self["TP-gt_call-1_base-2"] +
                     self["TP-gt_call-2_base-2"] + self["TP-gt_call-2_base-1"]
                 ) / gt_comparisons
